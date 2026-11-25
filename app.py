@@ -410,7 +410,7 @@ def validate(lang: str, p: dict, subject: str, body: str, sender_name: str,
     signoffs = rules.get("signoff", [])
     if signoffs:
         # only the closing lines count: "sincerely" also appears mid-sentence ("I sincerely hope")
-        tail = "\n".join([ln for ln in body.splitlines() if ln.strip()][-7:]).lower()
+        tail = "\n".join([ln for ln in body.splitlines() if ln.strip()][-10:]).lower()
         if not any(s in tail for s in signoffs):
             problems.append("missing sign-off")
     for phrase in rules.get("banned", []):

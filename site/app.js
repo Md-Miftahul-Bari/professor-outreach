@@ -373,7 +373,7 @@ function validate(cfg, prof, subject, body, locked) {
   const signoffs = rules.signoff || [];
   if (signoffs.length) {
     // only the closing lines count: "sincerely" also appears mid-sentence ("I sincerely hope")
-    const tail = body.split("\n").filter((l) => l.trim()).slice(-7).join("\n").toLowerCase();
+    const tail = body.split("\n").filter((l) => l.trim()).slice(-10).join("\n").toLowerCase();
     if (!signoffs.some((s) => tail.includes(s))) problems.push("missing sign-off");
   }
   for (const bad of rules.banned || []) if (hay.includes(bad)) problems.push(`banned ${bad}`);
