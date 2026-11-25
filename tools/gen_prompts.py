@@ -140,8 +140,9 @@ WRITE IT
    applicant personally did, the tools they use, and one honest sentence about what they do not yet know.
 5. P4 (2 sentences): the single request - master's students in [[intake]], and whether a ten-minute call is
    possible; if places are full, any advice would help.
-6. Blank line, "My CV is attached. Thank you for your time." then a blank line, then the signature block
-   (name; institution and major; email; WeChat; phone; ORCID - omit missing lines).
+6. Blank line, then "My CV is attached. Thank you for your time." Then a blank line, then "Best regards," on
+   its own line, then the signature block (name; institution and major; email; WeChat; phone; ORCID - omit
+   missing lines). The "Best regards," line is required.
 
 Return the JSON object now."""
 
@@ -172,7 +173,8 @@ data = {
             "banned": ["i hope this email finds you well", "i am writing to express", "esteemed",
                        "i would be honored", "world-class", "i have long admired", "top-tier",
                        "please kindly", "please find attached", "i sincerely hope"],
-            "must": ["best regards"],
+            "must": [],
+            "signoff": ["best regards", "kind regards", "sincerely", "yours sincerely", "regards"],
         },
     },
 }

@@ -407,6 +407,9 @@ def validate(lang: str, p: dict, subject: str, body: str, sender_name: str,
     for needle in rules.get("must", []):
         if needle not in haystack:
             problems.append(f"missing {needle!r}")
+    signoffs = rules.get("signoff", [])
+    if signoffs and not any(s in haystack for s in signoffs):
+        problems.append("missing sign-off")
     for phrase in rules.get("banned", []):
         if phrase in haystack:
             problems.append(f"banned {phrase!r}")

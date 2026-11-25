@@ -366,6 +366,8 @@ function validate(cfg, prof, subject, body, locked) {
   }
   const hay = cfg.lang === "zh" ? body : body.toLowerCase();
   for (const must of rules.must || []) if (!hay.includes(must)) problems.push(`missing ${must}`);
+  const signoffs = rules.signoff || [];
+  if (signoffs.length && !signoffs.some((s) => hay.includes(s))) problems.push("missing sign-off");
   for (const bad of rules.banned || []) if (hay.includes(bad)) problems.push(`banned ${bad}`);
   if (/[[\]]/.test(body)) problems.push("placeholders");
   if (!body.includes(cfg.signatureName)) problems.push("signature");
@@ -754,7 +756,10 @@ async function preview() {
       let lastError = "";
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
-          const data = await callLLM(cfg, system, user);
+          const prompt = attempt && lastProblems.length
+            ? `${user}\n\nThe previous attempt failed these checks: ${lastProblems.join("; ")}. Fix them and return the complete JSON again.`
+            : user;
+          const data = await callLLM(cfg, system, prompt);
           tokens += (data.usage && data.usage.total_tokens) || 0;
           const obj = parseJsonLoose(data.choices[0].message.content);
           subject = String(obj.subject || "").split(/\s+/).join(" ").trim();
@@ -860,7 +865,10 @@ async function startRun() {
           const { system, user } = buildPrompt(cfg, prof);
           let problems = ["not generated"];
           for (let attempt = 0; attempt < 3; attempt++) {
-            const data = await callLLM(cfg, system, user);
+            const prompt = attempt && problems.length
+              ? `${user}\n\nThe previous attempt failed these checks: ${problems.join("; ")}. Fix them and return the complete JSON again.`
+              : user;
+            const data = await callLLM(cfg, system, prompt);
             state.run.calls++;
             const usage = data.usage || {};
             state.run.tokensIn += usage.prompt_tokens || 0;
