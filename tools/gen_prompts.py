@@ -64,48 +64,24 @@ USER_ZH = """【申请人资料】
 
 现在输出 JSON。"""
 
-SYSTEM_EN = """You write short first-contact emails in English from a prospective master's applicant to a professor.
+SYSTEM_EN = """You write first-contact emails in English from a prospective master's applicant to a professor.
 
 Output ONLY a JSON object: {"subject": "...", "body": "..."} and nothing else.
 
-STYLE SAMPLE - match this voice, not its content:
+The user has a fixed letter they want. Reproduce its structure and its fixed sentences WORD FOR WORD, filling
+only the parts that depend on the professor and on the applicant's facts. Do not improve the wording, do not
+shorten it, do not replace the formal phrases with plainer English.
 
-  Dear Professor Lin,
-
-  I am finishing a Computer Science degree at North China University and applying for the autumn 2027 master's
-  intake. Your work on non-volatile memory systems is why I am writing: I spent last year building training
-  pipelines for a detection model and kept hitting the same wall - the bottleneck was never the model, it was
-  the data path underneath it.
-
-  I built and annotated the chest X-ray dataset for a co-authored paper on pneumonia detection, and I use
-  YOLOv8 regularly. I am comfortable in Python, C/C++ and Linux. What I lack is a systems background, and I
-  would rather say that plainly than pretend otherwise.
-
-  Would you be taking master's students in autumn 2027? If you have ten minutes, I would value a short call.
-  If your places are already filled, any advice on what to read would still help.
-
-  My CV is attached. Thank you for your time.
-
-  Best regards,
-  ...
-
-That sample is about register: first person, concrete, plain words, short sentences, one honest admission, no
-ceremony. Do not copy its facts, its university, or its subject line.
-
-RULES
-1. Use ONLY facts from APPLICANT PROFILE. Invent nothing. Omit contact lines the profile lacks.
-2. Discuss the professor's work ONLY through the areas listed in PROFESSOR. Invent no papers or results.
-3. Body 150-200 words, four short paragraphs, plain text, no markdown, no bullets, no emoji.
-4. Do not translate Chinese phrasing literally. Write from the facts, in English, the way the sample does.
-5. Banned: "I hope this email finds you well", "I am writing to", "Please kindly", "esteemed", "world-class",
-   "I would be honored", "I am confident that my ... will allow me", "strong learning ability",
-   "solid foundation" as self-praise, "Looking forward to hearing from you", "Thank you for your time and
-   consideration".
-6. Exactly one request, stated once, in the third paragraph.
-7. Tone: modest, specific, unadorned. One thing the applicant did, one thing they want to learn, one honest
-   gap. No promises about results.
-8. Signature block, one line each: name; institution and major; email; WeChat; phone; ORCID - omit missing.
-9. Subject: use FIXED SUBJECT verbatim if given, otherwise at most 8 words, not a question.
+1. Use ONLY facts from APPLICANT PROFILE. Invent nothing; omit a contact line the profile lacks.
+2. Discuss the professor's work only through the areas listed in PROFESSOR.
+3. The two opening sentences after the salutation must appear exactly:
+   "I hope this email finds you well. Please forgive me for writing to you unexpectedly."
+4. Do not shorten. The letter is 200-300 words, five paragraphs, plain text, no markdown.
+5. Keep the formal register of the template ("I would be very grateful", "Please kindly find my CV enclosed",
+   "Sincerely"). Do not modernise it.
+6. Signature block after "Sincerely," - name; institution; major; email; WeChat; phone; ORCID, omitting any
+   line the profile lacks.
+7. Subject: use FIXED SUBJECT verbatim if given, otherwise at most 8 words, not a question.
 """
 
 USER_EN = """APPLICANT PROFILE
@@ -128,21 +104,41 @@ Signature name: [[signature_name]]
 FIXED SUBJECT
 [[subject_tpl]]
 
-WRITE IT
-1. Line 1: [[sal]]
-2. Blank line, then P1 (2 sentences): who the applicant is, and what they are asking for. Start with the
-   person and the request, not with an apology. Example shape: "I am finishing a Computer Science degree at X
-   and applying for the autumn 2027 master's intake."
-3. P2 (2-3 sentences): why this professor. Name one or two of their listed areas and connect them to something
-   the applicant actually did or genuinely wants to understand. This is the paragraph that must not feel
-   generic - no flattery, no "your prestigious group".
-4. P3 (2-3 sentences): one concrete piece of evidence from the profile (a paper or a project) with what the
-   applicant personally did, the tools they use, and one honest sentence about what they do not yet know.
-5. P4 (2 sentences): the single request - master's students in [[intake]], and whether a ten-minute call is
-   possible; if places are full, any advice would help.
-6. Blank line, then "My CV is attached. Thank you for your time." Then a blank line, then "Best regards," on
-   its own line, then the signature block (name; institution and major; email; WeChat; phone; ORCID - omit
-   missing lines). The "Best regards," line is required.
+Write exactly this letter, in this order, keeping every fixed sentence word for word. Replace the
+[bracketed slots] with the applicant's real facts; keep the rest identical.
+
+[[sal]]
+
+I hope this email finds you well. Please forgive me for writing to you unexpectedly.
+
+My name is [full name, with the Chinese name in brackets if the profile has one], an undergraduate student
+majoring in [major] at [institution], expected to graduate in [graduation month and year]. [If the profile
+mentions a language certificate: I have passed HSK Level N.] I have read your profile and am very interested in
+your research in [one or two areas from PROFESSOR]. I took part in [the paper and/or project named in the
+profile], which gave me practical experience in [what that work involved, taken from the profile]. I also have
+a solid foundation in [skills from the profile].
+
+While I am currently at the early stage of my understanding of [the same area], I hold a deep interest in this
+field. I am confident that my solid programming foundation, project experience in system integration, and
+strong learning ability will allow me to bridge this theoretical gap quickly before enrollment and devote
+myself fully to your research team. This is precisely why I sincerely hope to learn under your supervision at
+the master's level.
+
+May I ask whether you will be accepting master's students in [intake]? If convenient, I would be very grateful
+for a 10-15 minute online or in-person meeting to ask what knowledge and literature I should prepare in
+advance. If your quota for this year is already full, I would also sincerely appreciate your advice.
+
+Please kindly find my CV enclosed for your reference; I would be very grateful if you could take a look at it
+when you have a moment. Thank you for your time.
+
+Sincerely,
+[name]
+[institution]
+[major]
+Email: [email]
+WeChat: [wechat if present]
+Phone: [phone if present]
+ORCID: [orcid if present]
 
 Return the JSON object now."""
 
@@ -167,14 +163,14 @@ data = {
             "must": ["您好", "此致", "敬礼"],
         },
         "en": {
-            "min_words": 140,
-            "max_words": 300,
+            "min_words": 180,
+            "max_words": 360,
             "max_subject_words": 10,
-            "banned": ["i hope this email finds you well", "i am writing to express", "esteemed",
-                       "i would be honored", "world-class", "i have long admired", "top-tier",
-                       "please kindly", "please find attached", "i sincerely hope"],
-            "must": [],
-            "signoff": ["best regards", "kind regards", "sincerely", "yours sincerely", "regards"],
+            "banned": ["i am writing to express", "esteemed", "world-class", "i have long admired",
+                       "top-tier", "i would be honored"],
+            "must": ["i hope this email finds you well",
+                     "please forgive me for writing to you unexpectedly"],
+            "signoff": ["sincerely", "best regards", "kind regards", "yours sincerely"],
         },
     },
 }

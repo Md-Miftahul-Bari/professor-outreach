@@ -96,9 +96,9 @@ const locBad = localEmail(cfg, profs[5]);
 console.log("   different professor -> different body:", locBad.body !== loc.body);
 
 // sign-off must be accepted in its common forms, and rejected when absent
-const withSincere = locEn.body.replace(/Best regards,/, "Sincerely,");
-const noSignoff = locEn.body.replace(/Best regards,/, "");
-console.log("   'Sincerely,' accepted:", validate(enCfg, first, "x", withSincere, true).length === 0);
+const withSincere = locEn.body.replace(/Sincerely,/, "Best regards,");
+const noSignoff = locEn.body.replace(/Sincerely,/, "");
+console.log("   'Best regards,' accepted:", validate(enCfg, first, "x", withSincere, true).length === 0);
 console.log("   no sign-off rejected:", validate(enCfg, first, "x", noSignoff, true).some((p) => p.includes("sign-off")));
 
 const localOk = locChars >= 300 && locWords >= 140;

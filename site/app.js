@@ -53,6 +53,8 @@ const I18N = {
     err_net: "连不上邮件服务器：检查网络，或端口 465/587 是否被屏蔽。",
     err_rcpt: "邮件服务器拒绝了收件地址。",
     err_unknown: "发送失败。",
+    no_key_local: "没有填写 API Key，这次会用「本地模板」写作——句子是按模板拼的，不会像 DeepSeek 那样自然。想让它像聊天一样写，请在上面填 API Key。",
+    profile_lang_hint: "提示：写英文邮件时，用英文填写这份资料效果最好（专业、项目名、技能）。",
   },
   en: {
     title: "Professor Outreach",
@@ -101,6 +103,8 @@ const I18N = {
     err_net: "Cannot reach the mail server: check the network, or whether port 465/587 is blocked.",
     err_rcpt: "The mail server rejected the recipient address.",
     err_unknown: "Sending failed.",
+    no_key_local: "No API key, so this run uses the local template — the sentences are assembled fixed, not written like DeepSeek chat. Add an API key above to get natural writing.",
+    profile_lang_hint: "Tip: for English emails, fill this profile in English (major, projects, skills).",
   },
 };
 
@@ -483,12 +487,84 @@ function signatureBlock(cfg, f, lang) {
   return lines.join("\n");
 }
 
+function monthName(n) {
+  return ["January", "February", "March", "April", "May", "June", "July", "August",
+          "September", "October", "November", "December"][n - 1] || "";
+}
+
+function gradEn(grad) {
+  const m = String(grad).match(/(\d{4})\s*年\s*(\d{1,2})\s*月/);
+  if (m) return `${monthName(Number(m[2]))} ${m[1]}`;
+  const m2 = String(grad).match(/(\d{4})-(\d{1,2})/);
+  if (m2) return `${monthName(Number(m2[2]))} ${m2[1]}`;
+  return String(grad).trim();
+}
+
+function listEn(text) {
+  const items = sentence(text, 200).split(/[、,，;；]/).map((s) => s.trim()).filter(Boolean);
+  if (items.length <= 1) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
+}
+
+function hskOf(facts) {
+  const lang = fact(facts, ["语言", "language"]);
+  const m = lang.match(/HSK\s*(?:Level\s*)?([1-6]|[一二三四五六])/i);
+  if (!m) return "";
+  const map = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6 };
+  return m[1] in map ? map[m[1]] : m[1];
+}
+
+function gradOf(facts) {
+  const direct = cleanDate(fact(facts, ["毕业", "graduat"]));
+  if (direct) return direct;
+  const edu = fact(facts, ["学历", "degree", "education"]);
+  const range = edu.match(/(\d{4}\s*年\s*\d{1,2}\s*月)\s*[—\-–~至到]+\s*(\d{4}\s*年\s*\d{1,2}\s*月)/);
+  if (range) return range[2];
+  const single = edu.match(/(\d{4}\s*年\s*\d{1,2}\s*月)/);
+  return single ? single[1] : "";
+}
+
+function contactBits(facts, cfg) {
+  const blob = [fact(facts, ["联系方式", "contact"]), fact(facts, ["邮箱", "email"])].join(" ");
+  const email = (blob.match(/[\w.+-]+@[\w-]+\.[\w.]+/) || [""])[0] || cfg.senderEmail;
+  const phone = fact(facts, ["电话", "phone", "tel"]) ||
+    (blob.match(/(\+\d{1,3}[\s\d-]{7,15})/) || [""])[0].trim();
+  return { email, phone };
+}
+
+const EN_GLOSSARY = [
+  ["计算机科学与技术", "Computer Science and Technology"],
+  ["软件工程", "Software Engineering"],
+  ["人工智能", "Artificial Intelligence"],
+  ["计算机视觉", "computer vision"],
+  ["深度学习", "deep learning"],
+  ["机器学习", "machine learning"],
+  ["目标检测", "object detection"],
+  ["模型训练", "model training"],
+  ["图像标注", "image annotation"],
+  ["数据标注", "data annotation"],
+  ["数据采集", "data collection"],
+  ["数据集", "dataset"],
+  ["图像处理", "image processing"],
+  ["自然语言处理", "natural language processing"],
+  ["本科生", "undergraduate"],
+  ["硕士研究生", "master's student"],
+  ["助教", "teaching assistant"],
+  ["大学", "University"],
+];
+
+function enify(text) {
+  let out = String(text || "");
+  for (const [zh, en] of EN_GLOSSARY) out = out.split(zh).join(en);
+  return out;
+}
+
 function localEmail(cfg, prof) {
   const f = parseFacts(cfg.profile);
   const name = cfg.signatureName;
   const uni = fact(f, ["学校", "university", "院校"]) || cfg.university;
   const major = deriveMajor(f) || (cfg.lang === "zh" ? "计算机" : "Computer Science");
-  const grad = cleanDate(fact(f, ["毕业", "graduat"]));
+  const grad = gradOf(f);
   const paper = fact(f, ["论文", "paper", "publication"]);
   const project = fact(f, ["项目", "project"]);
   const skills = fact(f, ["技能", "skill"]);
@@ -552,34 +628,57 @@ ${sig}`;
     return { subject, body };
   }
 
-  const openings = [
-    `I am finishing a ${major} degree at ${uni}${grad ? ` (${grad})` : ""} and applying for the ${cfg.intake} master's intake.`,
-    `I am in my final year of a ${major} degree at ${uni}${grad ? `, finishing in ${grad}` : ""}, and I am applying for the ${cfg.intake} master's intake.`,
-    `I am a ${major} student at ${uni}${grad ? `, graduating in ${grad}` : ""}, and I am applying for the ${cfg.intake} master's intake.`,
-  ];
-  const evidence = [];
-  if (paper) evidence.push(`I worked on ${titleOf(paper, 110)}.`);
-  if (project) evidence.push(`I also worked on ${titleOf(project, 90)}.`);
-  if (skills) evidence.push(`I use ${sentence(skills, 80)}.`);
+  const nameFull = fact(f, ["姓名", "name"]) || name;
+  const nameOnly = nameFull.split(/[（(，,]/)[0].trim() || name;
+  const cname = (nameFull.match(/[（(]([^）)]{1,12})[）)]/) || [])[1] || "";
+  const nameLine = cname ? `${nameOnly} (${cname})` : nameOnly;
+  const gradTxt = grad ? gradEn(grad) : "";
+  const hsk = hskOf(f);
+  const paperTitle = paper ? titleOf(paper, 90) : "";
+  const projectTitle = project ? titleOf(project, 80) : "";
+  const done = [paperTitle, projectTitle].filter(Boolean).map(enify);
+  const expSentence = done.length
+    ? `I took part in ${done.join(" and ")}, which gave me practical experience in dataset preparation, model training and system integration.`
+    : `I have worked on coursework projects in ${majorEn}, including data preparation and model training.`;
+  const skillsSentence = skills ? `I also have a solid foundation in ${listEn(enify(skills))}.` : "";
+  const hskSentence = hsk ? `I have passed HSK Level ${hsk}.` : "";
 
-  let body = `${prof.sal.en}
+  const emailAddr = contactBits(f, cfg).email;
+  const wechat = fact(f, ["微信", "wechat"]);
+  const phoneNo = contactBits(f, cfg).phone;
+  const orcid = fact(f, ["orcid"]);
+  const sigEn = [
+    nameLine, uni, enify(major),
+    `Email: ${emailAddr}`,
+    wechat ? `WeChat: ${wechat}` : "",
+    phoneNo ? `Phone: ${phoneNo}` : "",
+    orcid ? `ORCID: ${orcid}` : "",
+  ].filter(Boolean).join("\n");
 
-${openings[v]} I am writing because of your work on ${area}.
+  const majorEn = enify(major);
+  const para2 = [
+    `My name is ${nameLine}, an undergraduate student majoring in ${majorEn} at ${uni}${gradTxt ? `, expected to graduate in ${gradTxt}` : ""}.`,
+    hskSentence,
+    `I have read your profile and am very interested in your research in ${area}.`,
+    expSentence,
+    skillsSentence,
+  ].filter(Boolean).join(" ");
 
-${evidence.join(" ")}
+  const body = `${prof.sal.en}
 
-What I lack is a research background in this area, and I would rather say that plainly than pretend otherwise. I am ready to do the reading before I arrive.
+I hope this email finds you well. Please forgive me for writing to you unexpectedly.
 
-Would you be taking master's students in ${cfg.intake}? If you have ten minutes, I would value a short call. If your places are already filled, any advice on what to read would still help.
+${para2}
 
-My CV is attached. Thank you for your time.
+While I am currently at the early stage of my understanding of ${area}, I hold a deep interest in this field. I am confident that my solid programming foundation, project experience in system integration, and strong learning ability will allow me to bridge this theoretical gap quickly before enrollment and devote myself fully to your research team. This is precisely why I sincerely hope to learn under your supervision at the master's level.
 
-Best regards,
-${sig}`;
+May I ask whether you will be accepting master's students in ${cfg.intake}? If convenient, I would be very grateful for a 10-15 minute online or in-person meeting to ask what knowledge and literature I should prepare in advance. If your quota for this year is already full, I would also sincerely appreciate your advice.
 
-  if (body.trim().split(/\s+/).length < 150) {
-    body = body.replace("My CV is attached.", "I know my background is still limited, but I am ready to start from the basics, read carefully, and then take on real work in the group.\n\nMy CV is attached.");
-  }
+Please kindly find my CV enclosed for your reference; I would be very grateful if you could take a look at it when you have a moment. Thank you for your time.
+
+Sincerely,
+${sigEn}`;
+
   return { subject, body };
 }
 async function callLLM(cfg, system, user) {
@@ -737,6 +836,7 @@ async function preview() {
   btn.disabled = true; btn.textContent = t("generating");
   try {
     const cfg = readConfig();
+    if (cfg.local && !cfg.demo && val("llm_provider") !== "local") showError(t("no_key_local"));
     if (!cfg.profs) state.profs = buildProfs(state.csv.rows);
     const prof = state.profs[0];
     if (prof.name.trim().toLowerCase() === cfg.signatureName.trim().toLowerCase()) {
@@ -827,6 +927,7 @@ async function startRun() {
   let cfg;
   try { cfg = readConfig(); } catch (e) { return showError(e.message); }
   if (!cfg.demo && !cfg.local && !cfg.key) return showError(state.lang === "zh" ? "请填写 API Key，或选择「本地模板」" : "Add an API key, or choose the local template writer");
+  if (cfg.local && !cfg.demo && val("llm_provider") !== "local") showError(t("no_key_local"));
   if (!cfg.demo && !cfg.authKey && val("smtp_provider") !== "custom") {
     return showError(state.lang === "zh" ? "请填写邮箱授权码" : "App password is missing");
   }
