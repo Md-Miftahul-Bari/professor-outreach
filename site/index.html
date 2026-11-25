@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Professor Outreach · 教授邮件助手</title>
+<meta name="description" content="A local tool that writes a separate email for every professor and sends them from your own mailbox.">
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✉️</text></svg>">
+</head>
+<body>
+<div class="blobs" aria-hidden="true"><i class="b1"></i><i class="b2"></i><i class="b3"></i></div>
+
+<nav class="nav">
+  <a class="logo" href="/"><span class="mark">✉</span><span data-i18n="brand">教授邮件助手</span></a>
+  <div class="nav-right">
+    <a href="#how" data-i18n="nav_how">怎么用</a>
+    <a href="#start" data-i18n="nav_start">快速开始</a>
+    <a href="/manual.html" class="cta" data-i18n="nav_manual">使用手册</a>
+    <button id="lang" class="lang" type="button" aria-label="switch language">EN</button>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-text">
+    <span class="kicker" data-i18n="kicker">本机运行 · 不上传任何凭据</span>
+    <h1 data-i18n="h1">给每位教授，写一封只属于他的信</h1>
+    <p class="lead" data-i18n="lead">
+      上传一份教授名单和一个 CSV，它按每位教授的研究方向单独写信——不是群发模板——再通过你自己的邮箱逐封
+      发出，附上简历，并实时告诉你发到第几封。
+    </p>
+    <div class="buttons">
+      <a class="btn primary" href="#start" data-i18n="btn_start">快速开始</a>
+      <a class="btn ghost" href="/manual.html" data-i18n="btn_manual">阅读使用手册</a>
+    </div>
+    <ul class="badges">
+      <li data-i18n="b1">零依赖</li>
+      <li data-i18n="b2">中英双语界面</li>
+      <li data-i18n="b3">MIT 许可</li>
+    </ul>
+  </div>
+
+  <div class="hero-art" aria-hidden="true">
+    <div class="card-mock">
+      <div class="mock-top">
+        <div class="mock-ring"><b>68%</b></div>
+        <div class="mock-meta">
+          <span class="pill small">发送中</span>
+          <div class="mock-line"></div>
+          <div class="mock-line short"></div>
+        </div>
+      </div>
+      <div class="mock-tiles">
+        <div class="tile g"><span>已发送</span><b>41</b></div>
+        <div class="tile b"><span>剩余</span><b>19</b></div>
+        <div class="tile r"><span>失败</span><b>0</b></div>
+        <div class="tile v"><span>总计</span><b>60</b></div>
+      </div>
+      <div class="mock-rows">
+        <div class="mock-row"><i class="ok"></i><span></span></div>
+        <div class="mock-row"><i class="ok"></i><span style="width:72%"></span></div>
+        <div class="mock-row"><i class="ok"></i><span style="width:58%"></span></div>
+        <div class="mock-row"><i></i><span style="width:46%"></span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section id="how" class="section">
+    <h2 data-i18n="how_h2">它到底做了什么</h2>
+    <p class="section-lead" data-i18n="how_lead">三步，全部在你自己的电脑上完成。</p>
+    <ol class="steps">
+      <li>
+        <b data-i18n="step1_t">读名单</b>
+        <p data-i18n="step1_d">解析 CSV：姓名、邮箱、职称、院系、研究方向。没有邮箱的行跳过，重复的邮箱只发一次。</p>
+      </li>
+      <li>
+        <b data-i18n="step2_t">单独写</b>
+        <p data-i18n="step2_d">用你选的模型，结合你的背景和这位教授的方向写一封信；格式校验不过就重写，最多三次。</p>
+      </li>
+      <li>
+        <b data-i18n="step3_t">逐封发</b>
+        <p data-i18n="step3_d">经你的 SMTP 发出，附件带上简历；可暂停、可停止，重跑自动跳过已发的。</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="feat_h2">为什么不是群发</h2>
+    <div class="grid">
+      <article><h3 data-i18n="f1_t">每封都不同</h3><p data-i18n="f1_d">第 3–5 段围绕该教授的研究方向重写，提示词明确禁止只替换关键词。</p></article>
+      <article><h3 data-i18n="f2_t">只用真事实</h3><p data-i18n="f2_d">模型只能使用「申请人背景」里写的内容，成绩、论文、奖项、联系方式都不会被编造。</p></article>
+      <article><h3 data-i18n="f3_t">固定格式</h3><p data-i18n="f3_d">称呼 → 自我介绍 → 经历 → 提问 → 此致/敬礼 → 署名，中英各一套。</p></article>
+      <article><h3 data-i18n="f4_t">实时进度</h3><p data-i18n="f4_d">已发/剩余/失败、用时、预计剩余、Token 与预估费用，逐封日志。</p></article>
+      <article><h3 data-i18n="f5_t">不会重复</h3><p data-i18n="f5_d">发送记录写在 runs/ 里，中断后重跑从没发过的地方继续。</p></article>
+      <article><h3 data-i18n="f6_t">凭据不落盘</h3><p data-i18n="f6_d">授权码与 API Key 只存在内存，程序一关就没了；只监听 127.0.0.1。</p></article>
+    </div>
+  </section>
+
+  <section id="start" class="section start">
+    <h2 data-i18n="start_h2">快速开始</h2>
+    <p class="section-lead" data-i18n="start_lead">需要 Python 3.9+，不需要安装任何第三方库。</p>
+    <pre><code><span class="c"># <span data-i18n="s1">克隆仓库</span></span>
+git clone https://github.com/&lt;your-name&gt;/professor-outreach.git
+cd professor-outreach
+
+<span class="c"># <span data-i18n="s2">启动，然后打开 http://127.0.0.1:8765</span></span>
+python app.py</code></pre>
+    <p class="small" data-i18n="start_note">Windows 也可以直接双击 start.bat。第一次使用建议先选「演示模式」，点「预览第一封」看格式。</p>
+  </section>
+
+  <section class="section">
+    <h2 data-i18n="faq_h2">几个常见问题</h2>
+    <details>
+      <summary data-i18n="q1">它会自动替我发邮件吗？</summary>
+      <p data-i18n="a1">不会。所有邮件都在你本机生成，由你点「开始发送」才发出，发送前还有一次确认。</p>
+    </details>
+    <details>
+      <summary data-i18n="q2">我的邮箱密码会被上传吗？</summary>
+      <p data-i18n="a2">不会。授权码只存在内存里，用于这一次连接；程序关闭即消失，也不写日志。</p>
+    </details>
+    <details>
+      <summary data-i18n="q3">能放在网上给所有人用吗？</summary>
+      <p data-i18n="a3">不建议。别人的邮箱授权码会经过你的服务器。让每个人在自己电脑上运行更安全。</p>
+    </details>
+    <details>
+      <summary data-i18n="q4">支持哪些模型和邮箱？</summary>
+      <p data-i18n="a4">DeepSeek、OpenAI、Kimi、SiliconFlow 或任意 OpenAI 兼容接口；QQ、Gmail、Outlook、163、126 或自定义 SMTP。</p>
+    </details>
+  </section>
+</main>
+
+<footer class="foot">
+  <span data-i18n="foot_left">MIT License · 本地运行，凭据不上传</span>
+  <a href="/manual.html" data-i18n="foot_manual">使用手册</a>
+</footer>
+
+<script src="/site.js"></script>
+</body>
+</html>

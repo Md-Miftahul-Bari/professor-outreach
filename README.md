@@ -44,6 +44,22 @@ python app.py
 
 Open <http://127.0.0.1:8765>. On Windows you can also double-click `start.bat`.
 
+📖 **[User manual / 使用手册](MANUAL.md)** — setup, every field explained, troubleshooting, FAQ.
+
+## Documentation site
+
+`site/` is a static landing page plus the same manual rendered in the browser. It is what the Netlify deploy
+publishes (`netlify.toml` sets `publish = "site"`).
+
+```
+site/index.html    landing page (中 / EN toggle)
+site/manual.html   manual, rendered from site/manual.md at load
+site/manual.md     copy of MANUAL.md — re-copy it after editing the manual
+```
+
+Note that the site is documentation only: the app itself needs Python and cannot run on Netlify, GitHub Pages or
+any static host.
+
 ## What to fill in
 
 | Section | What it wants |
