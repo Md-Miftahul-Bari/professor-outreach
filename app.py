@@ -409,9 +409,10 @@ def validate(lang: str, p: dict, subject: str, body: str, sender_name: str,
             problems.append(f"missing {needle!r}")
     signoffs = rules.get("signoff", [])
     if signoffs:
-        # only the closing lines count: "sincerely" also appears mid-sentence ("I sincerely hope")
-        tail = "\n".join([ln for ln in body.splitlines() if ln.strip()][-10:]).lower()
-        if not any(s in tail for s in signoffs):
+        # the sign-off must sit in the final block, otherwise "I sincerely hope" satisfies the search
+        blocks = [b.strip() for b in re.split(r"\n\s*\n", body) if b.strip()]
+        last_block = (blocks[-1] if blocks else "").lower()
+        if not any(s in last_block for s in signoffs):
             problems.append("missing sign-off")
     for phrase in rules.get("banned", []):
         if phrase in haystack:

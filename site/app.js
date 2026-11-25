@@ -372,9 +372,11 @@ function validate(cfg, prof, subject, body, locked) {
   for (const must of rules.must || []) if (!hay.includes(must)) problems.push(`missing ${must}`);
   const signoffs = rules.signoff || [];
   if (signoffs.length) {
-    // only the closing lines count: "sincerely" also appears mid-sentence ("I sincerely hope")
-    const tail = body.split("\n").filter((l) => l.trim()).slice(-10).join("\n").toLowerCase();
-    if (!signoffs.some((s) => tail.includes(s))) problems.push("missing sign-off");
+    // the sign-off must sit in the final block (with the signature), not somewhere in the prose:
+    // "I sincerely hope" would otherwise satisfy a naive search
+    const blocks = body.split(/\n\s*\n/).map((b) => b.trim()).filter(Boolean);
+    const lastBlock = (blocks[blocks.length - 1] || "").toLowerCase();
+    if (!signoffs.some((s) => lastBlock.includes(s))) problems.push("missing sign-off");
   }
   for (const bad of rules.banned || []) if (hay.includes(bad)) problems.push(`banned ${bad}`);
   if (/[[\]]/.test(body)) problems.push("placeholders");
