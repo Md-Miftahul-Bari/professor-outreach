@@ -255,10 +255,28 @@ function surnameOf(name) {
   return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
 }
 
+function displayName(name) {
+  return String(name || "")
+    .trim()
+    .split(/\s+/)
+    .map((tok) => (tok.length > 1 && tok === tok.toUpperCase()
+      ? tok.charAt(0).toUpperCase() + tok.slice(1).toLowerCase()
+      : tok))
+    .join(" ");
+}
+
 function salutationOf(name, title) {
-  const sn = surnameOf(name), tl = String(title || "").toLowerCase();
-  const zh = `尊敬的${sn}老师：`;
-  const en = tl.includes("professor") ? `Dear Professor ${sn},` : (tl.includes("researcher") || tl.includes("fellow")) ? `Dear Dr. ${sn},` : `Dear ${sn},`;
+  const full = displayName(name);
+  // Chinese readers expect "尊敬的王老师"; an ALL-CAPS token is a reliable surname marker ("Jiwu SHU").
+  // When there is no such marker ("Zhang Yuan"), use the whole name rather than guess.
+  const caps = String(name).trim().split(/\s+/).filter((t) => t.length > 1 && t === t.toUpperCase());
+  const zhName = caps.length ? displayName(caps[caps.length - 1]) : full;
+  const tl = String(title || "").toLowerCase();
+  const zh = `尊敬的${zhName}老师：`;
+  let en;
+  if (tl.includes("professor")) en = `Dear Professor ${full},`;
+  else if (tl.includes("researcher") || tl.includes("fellow")) en = `Dear Dr. ${full},`;
+  else en = `Dear ${full},`;
   return { zh, en };
 }
 
@@ -473,7 +491,9 @@ function localEmail(cfg, prof) {
   const project = fact(f, ["项目", "project"]);
   const skills = fact(f, ["技能", "skill"]);
   const topics = topicsOf(prof.research, 2);
-  const area = topics.length ? topics.join(cfg.lang === "zh" ? "、" : ", ") : (cfg.lang === "zh" ? "这个方向" : "this area");
+  const area = topics.length
+    ? (cfg.lang === "zh" ? topics.join("、") : topics.length > 2 ? `${topics.slice(0, -1).join(", ")} and ${topics[topics.length - 1]}` : topics.join(" and "))
+    : (cfg.lang === "zh" ? "这个方向" : "this area");
   const v = hashOf(prof.email) % 3;
   const sig = signatureBlock(cfg, f, cfg.lang);
 
@@ -513,7 +533,7 @@ ${openings[v]}
 
 ${evidence}
 
-我目前的${"这个方向"}基础还在起步阶段，但我愿意在入学前补上：先把您提到的几本基础文献和综述读完，再跟着课题组的节奏做具体工作。
+我目前在这个方向的理论基础还在起步阶段，但我愿意在入学前补上：先把您提到的几本基础文献和综述读完，再跟着课题组的节奏做具体工作。
 
 请问您在${cfg.intake}是否招收硕士研究生？如您方便，我希望能有十分钟左右的时间向您请教需要提前准备的知识和文献；若名额已满，也恳请您给些建议。
 
@@ -531,25 +551,24 @@ ${sig}`;
   }
 
   const openings = [
-    `I am a ${major} undergraduate at ${uni}${grad ? `, graduating in ${grad},` : ""} and I am writing to ask whether you will be taking master's students in ${cfg.intake}.`,
-    `I am a final-year ${major} student at ${uni}${grad ? ` (graduating ${grad})` : ""}. I am writing to ask about master's supervision in your group for ${cfg.intake}.`,
-    `I am writing to ask whether you will be admitting master's students in ${cfg.intake}. I am a ${major} undergraduate at ${uni}${grad ? `, finishing in ${grad}` : ""}.`,
+    `I am finishing a ${major} degree at ${uni}${grad ? ` (${grad})` : ""} and applying for the ${cfg.intake} master's intake.`,
+    `I am in my final year of a ${major} degree at ${uni}${grad ? `, finishing in ${grad}` : ""}, and I am applying for the ${cfg.intake} master's intake.`,
+    `I am a ${major} student at ${uni}${grad ? `, graduating in ${grad}` : ""}, and I am applying for the ${cfg.intake} master's intake.`,
   ];
-  const paperLine = paper ? ` I have worked on ${titleOf(paper, 110)}.` : "";
-  const projectLine = project ? ` I also worked on ${titleOf(project, 90)}.` : "";
-  const skillLine = skills ? ` The tools I use are ${sentence(skills, 80)}.` : "";
+  const evidence = [];
+  if (paper) evidence.push(`I worked on ${titleOf(paper, 110)}.`);
+  if (project) evidence.push(`I also worked on ${titleOf(project, 90)}.`);
+  if (skills) evidence.push(`I use ${sentence(skills, 80)}.`);
 
   let body = `${prof.sal.en}
 
-${openings[v]}
+${openings[v]} I am writing because of your work on ${area}.
 
-I have read your profile and am interested in your work on ${area}. That is the direction I would like to learn during a master's.
+${evidence.join(" ")}
 
-${(paperLine + projectLine + skillLine).trim()}
+What I lack is a research background in this area, and I would rather say that plainly than pretend otherwise. I am ready to do the reading before I arrive.
 
-My grounding in ${area} is still at an early stage, and I would rather say so plainly. I am willing to do the reading before enrolment and to start from the foundations of the group's work.
-
-Would you be admitting master's students in ${cfg.intake}? If you have ten minutes, I would value a short call to ask what I should read and prepare. If your places are already full, any advice would still help.
+Would you be taking master's students in ${cfg.intake}? If you have ten minutes, I would value a short call. If your places are already filled, any advice on what to read would still help.
 
 My CV is attached. Thank you for your time.
 
@@ -718,6 +737,11 @@ async function preview() {
     const cfg = readConfig();
     if (!cfg.profs) state.profs = buildProfs(state.csv.rows);
     const prof = state.profs[0];
+    if (prof.name.trim().toLowerCase() === cfg.signatureName.trim().toLowerCase()) {
+      showError(state.lang === "zh"
+        ? "注意：CSV 第一行的名字和你自己的姓名相同，确认一下是不是把自己当成了收件人。"
+        : "Note: the first CSV row has your own name — check that this is really a recipient.");
+    }
     let subject, body, tokens = 0;
     if (cfg.demo) {
       ({ subject, body } = demoEmail(cfg, prof));

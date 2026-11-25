@@ -183,17 +183,28 @@ def surname(name: str, overrides: dict | None = None) -> str:
     return toks[-1].title()
 
 
+def display_name(name: str) -> str:
+    """Keep the name as written, but normalise ALL-CAPS tokens: 'Shimin HU' -> 'Shimin Hu'."""
+    out = []
+    for tok in str(name).split():
+        out.append(tok[:1].upper() + tok[1:].lower() if len(tok) > 1 and tok.isupper() else tok)
+    return " ".join(out)
+
+
 def salutations(name: str, title: str, overrides: dict | None = None) -> tuple[str, str]:
-    sn = surname(name, overrides)
+    # English uses the whole name ("Dear Professor Zhang Yuan"), because picking a surname out of
+    # "Zhang Yuan" or "Shimin HU" cannot be done reliably and calling someone by their given name is worse.
+    full = display_name(name)
+    caps = [t for t in str(name).split() if len(t) > 1 and t.isupper()]
+    zh_name = display_name(caps[-1]) if caps else full
     t = title.lower()
-    # 中文一律用"老师"：对副教授、研究员都不会叫错，也是学生写信的常规写法
-    zh = f"尊敬的{sn}老师："
+    zh = f"尊敬的{zh_name}老师："
     if "professor" in t:
-        en = f"Dear Professor {sn},"
+        en = f"Dear Professor {full},"
     elif "researcher" in t or "fellow" in t:
-        en = f"Dear Dr. {sn},"
+        en = f"Dear Dr. {full},"
     else:
-        en = f"Dear {sn},"
+        en = f"Dear {full},"
     return zh, en
 
 
