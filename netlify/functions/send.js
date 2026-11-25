@@ -57,7 +57,12 @@ exports.handler = async (event) => {
     return json(200, { ok: true, messageId: info.messageId });
   } catch (e) {
     const detail = [e.code, e.response || e.message].filter(Boolean).join(" ");
-    return json(400, { error: detail.slice(0, 300) });
+    const resp = String(e.response || "") + " " + String(e.message || "");
+    let ecode = "unknown";
+    if (e.code === "EAUTH" || /\b535\b/.test(resp)) ecode = "auth";
+    else if (/ETIMEDOUT|ECONNREFUSED|ENOTFOUND|ESOCKET|EDNS/i.test(String(e.code || "") + resp)) ecode = "network";
+    else if (/\b55[0-9]\b/.test(resp)) ecode = "recipient";
+    return json(400, { error: detail.slice(0, 300), ecode });
   } finally {
     transporter.close();
   }

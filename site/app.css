@@ -204,6 +204,8 @@ button:disabled { opacity: .45; cursor: not-allowed; transform: none !important;
 
 .error { color: var(--red); font-size: 13px; margin: 12px 0 0; padding: 9px 12px;
          background: #fdf2f3; border: 1px solid #f8d7db; border-radius: 10px; }
+.ok-note { color: #17795a; font-size: 13px; margin: 12px 0 0; padding: 9px 12px;
+           background: #eafaf2; border: 1px solid #c9eedd; border-radius: 10px; }
 .hidden { display: none !important; }
 
 /* ---------------------------------------------------------- dashboard */

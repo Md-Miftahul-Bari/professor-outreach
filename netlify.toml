@@ -18,6 +18,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/api/test"
+  to = "/.netlify/functions/test"
+  status = 200
+  force = true
+
 [[headers]]
   for = "/*"
   [headers.values]

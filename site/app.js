@@ -46,6 +46,12 @@ const I18N = {
     big_attach: "附件太大：在线版单个请求上限约 4 MB，超过请用本地版。",
     cors_note: "若服务商不允许浏览器直连，会自动改走服务器转发。",
     foot_manual: "使用手册", foot_about: "关于",
+    btn_test: "测试邮箱登录",
+    test_ok: "登录成功：{email} 可以发信",
+    err_auth: "535 登录失败：发件邮箱和授权码必须属于同一个账号，且已开启 SMTP 服务。连续失败会被临时限制，请等 10–30 分钟再试。",
+    err_net: "连不上邮件服务器：检查网络，或端口 465/587 是否被屏蔽。",
+    err_rcpt: "邮件服务器拒绝了收件地址。",
+    err_unknown: "发送失败。",
   },
   en: {
     title: "Professor Outreach",
@@ -87,6 +93,12 @@ const I18N = {
     big_attach: "Attachments too large: the hosted version allows about 4 MB per request. Use the local edition.",
     cors_note: "If the provider blocks browser calls, the request is relayed through the server automatically.",
     foot_manual: "Manual", foot_about: "About",
+    btn_test: "Test login",
+    test_ok: "Signed in — {email} can send",
+    err_auth: "535 login failed: the From address and the app password must belong to the same account, and SMTP must be enabled. Repeated failures get temporarily limited — wait 10-30 minutes.",
+    err_net: "Cannot reach the mail server: check the network, or whether port 465/587 is blocked.",
+    err_rcpt: "The mail server rejected the recipient address.",
+    err_unknown: "Sending failed.",
   },
 };
 
@@ -400,8 +412,55 @@ async function sendMail(cfg, prof, subject, body) {
     }),
   });
   const data = await res.json().catch(() => ({ error: "server error" }));
-  if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+  if (!res.ok) {
+    const err = new Error(data.error || `HTTP ${res.status}`);
+    err.ecode = data.ecode;
+    throw err;
+  }
   return data;
+}
+
+function mailErrorText(e) {
+  const friendly = { auth: t("err_auth"), network: t("err_net"), recipient: t("err_rcpt") }[e.ecode];
+  if (friendly) {
+    const detail = String(e.message || "").slice(0, 90);
+    return detail ? `${friendly}  ${detail}` : friendly;
+  }
+  return e.message || t("err_unknown");
+}
+
+async function testLogin() {
+  showError("");
+  const ok = $("#test_result");
+  ok.classList.add("hidden");
+  const btn = $("#btn_test");
+  const label = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = t("generating");
+  try {
+    const cfg = readConfig();
+    const res = await fetch("/api/test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        smtp: { host: cfg.smtpHost, port: cfg.smtpPort, secure: cfg.smtpSsl },
+        auth: { user: cfg.senderEmail, pass: cfg.authKey },
+      }),
+    });
+    const data = await res.json().catch(() => ({ error: "server error" }));
+    if (!res.ok) {
+      const err = new Error(data.error || `HTTP ${res.status}`);
+      err.ecode = data.ecode;
+      throw err;
+    }
+    ok.textContent = t("test_ok").replace("{email}", cfg.senderEmail);
+    ok.classList.remove("hidden");
+  } catch (e) {
+    showError(mailErrorText(e));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = label;
+  }
 }
 
 /* ================================================================ config from form */
@@ -593,7 +652,7 @@ async function startRun() {
         state.run.failed++;
         sent[prof.email] = { status: "failed" };
         localStorage.setItem(SENT_KEY, JSON.stringify(sent));
-        logAdd("fail", `${prof.name}: ${e.message}`);
+        logAdd("fail", `${prof.name}: ${mailErrorText(e)}`);
         await delay(1500);
         continue;
       }
@@ -776,6 +835,7 @@ function bind() {
 
   $("#btn_preview").addEventListener("click", preview);
   $("#btn_start").addEventListener("click", startRun);
+  $("#btn_test").addEventListener("click", testLogin);
   $("#btn_pause").addEventListener("click", () => {
     state.paused = !state.paused;
     updatePauseLabel();
