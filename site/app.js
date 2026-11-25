@@ -371,7 +371,11 @@ function validate(cfg, prof, subject, body, locked) {
   const hay = cfg.lang === "zh" ? body : body.toLowerCase();
   for (const must of rules.must || []) if (!hay.includes(must)) problems.push(`missing ${must}`);
   const signoffs = rules.signoff || [];
-  if (signoffs.length && !signoffs.some((s) => hay.includes(s))) problems.push("missing sign-off");
+  if (signoffs.length) {
+    // only the closing lines count: "sincerely" also appears mid-sentence ("I sincerely hope")
+    const tail = body.split("\n").filter((l) => l.trim()).slice(-7).join("\n").toLowerCase();
+    if (!signoffs.some((s) => tail.includes(s))) problems.push("missing sign-off");
+  }
   for (const bad of rules.banned || []) if (hay.includes(bad)) problems.push(`banned ${bad}`);
   if (/[[\]]/.test(body)) problems.push("placeholders");
   if (!body.includes(cfg.signatureName)) problems.push("signature");

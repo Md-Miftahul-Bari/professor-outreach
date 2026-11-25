@@ -408,8 +408,11 @@ def validate(lang: str, p: dict, subject: str, body: str, sender_name: str,
         if needle not in haystack:
             problems.append(f"missing {needle!r}")
     signoffs = rules.get("signoff", [])
-    if signoffs and not any(s in haystack for s in signoffs):
-        problems.append("missing sign-off")
+    if signoffs:
+        # only the closing lines count: "sincerely" also appears mid-sentence ("I sincerely hope")
+        tail = "\n".join([ln for ln in body.splitlines() if ln.strip()][-7:]).lower()
+        if not any(s in tail for s in signoffs):
+            problems.append("missing sign-off")
     for phrase in rules.get("banned", []):
         if phrase in haystack:
             problems.append(f"banned {phrase!r}")
