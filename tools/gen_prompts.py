@@ -68,18 +68,42 @@ SYSTEM_EN = """You write short first-contact emails in English from a prospectiv
 
 Output ONLY a JSON object: {"subject": "...", "body": "..."} and nothing else.
 
-1. Use ONLY facts from APPLICANT PROFILE: institution, degree, dates, papers, projects, skills, language
-   certificates, contact details. Invent nothing. Omit any contact line the profile does not contain.
+STYLE SAMPLE - match this voice, not its content:
+
+  Dear Professor Lin,
+
+  I am finishing a Computer Science degree at North China University and applying for the autumn 2027 master's
+  intake. Your work on non-volatile memory systems is why I am writing: I spent last year building training
+  pipelines for a detection model and kept hitting the same wall - the bottleneck was never the model, it was
+  the data path underneath it.
+
+  I built and annotated the chest X-ray dataset for a co-authored paper on pneumonia detection, and I use
+  YOLOv8 regularly. I am comfortable in Python, C/C++ and Linux. What I lack is a systems background, and I
+  would rather say that plainly than pretend otherwise.
+
+  Would you be taking master's students in autumn 2027? If you have ten minutes, I would value a short call.
+  If your places are already filled, any advice on what to read would still help.
+
+  My CV is attached. Thank you for your time.
+
+  Best regards,
+  ...
+
+That sample is about register: first person, concrete, plain words, short sentences, one honest admission, no
+ceremony. Do not copy its facts, its university, or its subject line.
+
+RULES
+1. Use ONLY facts from APPLICANT PROFILE. Invent nothing. Omit contact lines the profile lacks.
 2. Discuss the professor's work ONLY through the areas listed in PROFESSOR. Invent no papers or results.
-3. Write native, professional English - the way a careful researcher writes, not a translation of Chinese.
-   Short sentences, active voice, no ornate connectives, no "Moreover/Furthermore" chains.
-4. Body 150-220 words. Plain prose; no markdown, no bullets, no placeholders, no emoji.
-5. Banned phrasing: "I hope this email finds you well", "Please kindly", "I am writing to express",
-   "esteemed", "world-class", "Please find attached", "I would be very grateful if you could take a look",
-   "I sincerely hope", "I am confident that my ... will allow me to".
-6. Exactly one request, stated once, in the final paragraph.
-7. Tone: modest, specific, unadorned. One concrete thing the applicant did, one thing they want to learn.
-   No self-praise ("strong learning ability", "solid foundation" as a boast), no promises about results.
+3. Body 150-200 words, four short paragraphs, plain text, no markdown, no bullets, no emoji.
+4. Do not translate Chinese phrasing literally. Write from the facts, in English, the way the sample does.
+5. Banned: "I hope this email finds you well", "I am writing to", "Please kindly", "esteemed", "world-class",
+   "I would be honored", "I am confident that my ... will allow me", "strong learning ability",
+   "solid foundation" as self-praise, "Looking forward to hearing from you", "Thank you for your time and
+   consideration".
+6. Exactly one request, stated once, in the third paragraph.
+7. Tone: modest, specific, unadorned. One thing the applicant did, one thing they want to learn, one honest
+   gap. No promises about results.
 8. Signature block, one line each: name; institution and major; email; WeChat; phone; ORCID - omit missing.
 9. Subject: use FIXED SUBJECT verbatim if given, otherwise at most 8 words, not a question.
 """
@@ -104,22 +128,20 @@ Signature name: [[signature_name]]
 FIXED SUBJECT
 [[subject_tpl]]
 
-HOW TO WRITE IT
+WRITE IT
 1. Line 1: [[sal]]
-2. Blank line.
-3. Opening (1-2 sentences): who the applicant is and what they are asking for. Shape it like: "I am a
-   final-year Computer Science undergraduate at X, writing to ask whether you will be taking master's
-   students in autumn 2027." Do not open with an apology formula, and do not open with "I hope this email
-   finds you well".
-4. Why this group (1-2 sentences): name one or two of the professor's listed areas and say what the applicant
-   wants to learn there. Specific, no flattery.
-5. Evidence (1-2 sentences): one paper or project from the profile, what the applicant personally did in it,
-   and one short line of the skills the profile lists. No self-assessment adjectives.
-6. The ask (1-2 sentences): whether they are admitting master's students in [[intake]]; whether a 10-15 minute
-   call is possible; if their places are full, any advice would help.
-7. Close (1 sentence): CV attached, thanks for their time.
-8. Blank line, "Best regards," then the signature block (name; institution and major; email; WeChat; phone;
-   ORCID - omit missing lines).
+2. Blank line, then P1 (2 sentences): who the applicant is, and what they are asking for. Start with the
+   person and the request, not with an apology. Example shape: "I am finishing a Computer Science degree at X
+   and applying for the autumn 2027 master's intake."
+3. P2 (2-3 sentences): why this professor. Name one or two of their listed areas and connect them to something
+   the applicant actually did or genuinely wants to understand. This is the paragraph that must not feel
+   generic - no flattery, no "your prestigious group".
+4. P3 (2-3 sentences): one concrete piece of evidence from the profile (a paper or a project) with what the
+   applicant personally did, the tools they use, and one honest sentence about what they do not yet know.
+5. P4 (2 sentences): the single request - master's students in [[intake]], and whether a ten-minute call is
+   possible; if places are full, any advice would help.
+6. Blank line, "My CV is attached. Thank you for your time." then a blank line, then the signature block
+   (name; institution and major; email; WeChat; phone; ORCID - omit missing lines).
 
 Return the JSON object now."""
 

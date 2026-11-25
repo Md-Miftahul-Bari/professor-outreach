@@ -195,6 +195,15 @@ function showError(msg) {
   const el = $("#form_error");
   el.textContent = msg || "";
   el.classList.toggle("hidden", !msg);
+  const toast = $("#toast");
+  if (toast) {
+    toast.textContent = msg || "";
+    toast.classList.toggle("hidden", !msg);
+    if (msg) {
+      clearTimeout(showError._t);
+      showError._t = setTimeout(() => toast.classList.add("hidden"), 12000);
+    }
+  }
 }
 
 function fmtDur(sec) {
@@ -717,17 +726,27 @@ async function preview() {
     } else {
       if (!cfg.key) throw new Error(state.lang === "zh" ? "请填写 API Key" : "API key is missing");
       const { system, user } = buildPrompt(cfg, prof);
+      let lastProblems = [];
+      let lastError = "";
       for (let attempt = 0; attempt < 3; attempt++) {
-        const data = await callLLM(cfg, system, user);
-        tokens += (data.usage && data.usage.total_tokens) || 0;
         try {
+          const data = await callLLM(cfg, system, user);
+          tokens += (data.usage && data.usage.total_tokens) || 0;
           const obj = parseJsonLoose(data.choices[0].message.content);
           subject = String(obj.subject || "").split(/\s+/).join(" ").trim();
           body = String(obj.body || "").trim();
-        } catch (_) { continue; }
-        if (!validate(cfg, prof, subject, body, Boolean(cfg.subjectTpl.trim())).length) break;
+        } catch (e) {
+          lastError = e.message || String(e);
+          continue;
+        }
+        lastProblems = validate(cfg, prof, subject, body, Boolean(cfg.subjectTpl.trim()));
+        if (!lastProblems.length) break;
       }
-      if (!body) throw new Error(state.lang === "zh" ? "三次生成都没通过格式校验" : "three attempts failed validation");
+      if (!body || lastProblems.length) {
+        body = "";
+        const detail = lastProblems.length ? lastProblems.join(", ") : lastError;
+        throw new Error((state.lang === "zh" ? "生成未通过校验：" : "generation failed validation: ") + detail);
+      }
       if (cfg.subjectTpl.trim()) subject = renderSubject(cfg.subjectTpl, cfg, prof);
     }
     $("#m_to").textContent = `${t("modal_to")}${prof.name} <${prof.email}>`;
