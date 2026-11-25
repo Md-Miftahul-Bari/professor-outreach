@@ -249,7 +249,7 @@ def parse_people(raw: bytes, overrides: dict | None = None, lang: str = "zh") ->
 
 
 def topics(research: str, limit: int = 3) -> list[str]:
-    text = re.sub(r"\([^()]*\)", " | ", research)
+    text = re.sub(r"\s{2,}", " ", re.sub(r"\([^()]*\)", " ", research))
     parts: list[str] = []
     for chunk in re.split(r"[;,|、]", text):
         phrase = chunk.strip(" .;:-")

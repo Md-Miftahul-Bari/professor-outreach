@@ -81,6 +81,24 @@ const enCfg = Object.assign({}, cfg, { lang: "en", profile: SAMPLE_EN, signature
 const enPrompt = buildPrompt(enCfg, first);
 console.log("en prompt chars:", enPrompt.user.length, "| name injected:", enPrompt.user.includes(enCfg.signatureName));
 
-const ok = !leftovers.length && profs.length > 0 && problems.length === 0;
+// no-API template writer
+const loc = localEmail(cfg, first);
+const locChars = (loc.body.match(/[\u4e00-\u9fff]/g) || []).length;
+console.log(`local zh: ${locChars} chars | subject: ${loc.subject}`);
+console.log("   starts with salutation:", loc.body.startsWith(first.sal.zh), "| has 此致:", loc.body.includes("此致"));
+const locEn = localEmail(Object.assign({}, enCfg, { lang: "en" }), first);
+const locWords = locEn.body.trim().split(/\s+/).length;
+console.log(`local en: ${locWords} words | subject: ${locEn.subject}`);
+console.log("   starts with salutation:", locEn.body.startsWith(first.sal.en), "| has Best regards:", locEn.body.includes("Best regards"));
+console.log("   profile facts used:", loc.body.includes(cfg.signatureName) && loc.body.includes(cfg.university));
+
+const locBad = localEmail(cfg, profs[5]);
+console.log("   different professor -> different body:", locBad.body !== loc.body);
+
+const localOk = locChars >= 300 && locWords >= 140;
+if (locChars < 300) console.log("   ! local zh too short:", locChars);
+if (locWords < 140) console.log("   ! local en too short:", locWords);
+
+const ok = !leftovers.length && profs.length > 0 && problems.length === 0 && localOk;
 console.log(ok ? "\nOK: hosted edition logic works" : "\nFAIL");
 process.exit(ok ? 0 : 1);

@@ -64,7 +64,8 @@
       </div>
       <div class="row">
         <label data-i18n="f_auth">授权码 / 应用专用密码</label>
-        <input id="auth_key" type="password" placeholder="••••••••••••" autocomplete="off">
+        <input id="auth_key" type="password" placeholder="••••••••••••" autocomplete="new-password"
+               autocorrect="off" autocapitalize="off" spellcheck="false">
         <small data-i18n="f_auth_hint">QQ 邮箱：设置 → 账户 → POP3/IMAP/SMTP 服务 → 生成授权码</small>
       </div>
       <div class="row">
@@ -84,6 +85,7 @@
             <option value="moonshot">Kimi / Moonshot</option>
             <option value="siliconflow">SiliconFlow</option>
             <option value="custom" data-i18n="opt_custom_llm">自定义接口</option>
+            <option value="local" data-i18n="opt_local">本地模板（不需要 API Key）</option>
             <option value="demo" data-i18n="opt_demo">演示模式（只能预览）</option>
           </select>
         </div>
@@ -94,7 +96,8 @@
       </div>
       <div class="row">
         <label data-i18n="f_key">API Key</label>
-        <input id="api_key" type="password" placeholder="sk-..." autocomplete="off">
+        <input id="api_key" type="password" placeholder="sk-..." autocomplete="new-password"
+               autocorrect="off" autocapitalize="off" spellcheck="false">
       </div>
       <div class="row custom-llm hidden">
         <label data-i18n="f_base">接口地址</label>

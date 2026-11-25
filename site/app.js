@@ -19,6 +19,7 @@ const I18N = {
     f_llm: "服务商", f_model: "模型", f_key: "API Key", f_base: "接口地址",
     f_jsonmode: "支持 JSON 模式", opt_custom_smtp: "自定义 SMTP",
     opt_custom_llm: "自定义接口", opt_demo: "演示模式（只能预览）",
+    opt_local: "本地模板（不需要 API Key）",
     f_university: "学校", f_intake: "入学时间", f_program: "申请项目",
     f_lang: "邮件语言", f_profile: "申请人背景（邮件只能使用这里的事实）",
     f_profile_hint: "上面是示例数据 — 用之前请整段换成你自己的信息。邮件只会使用这里的事实。",
@@ -66,6 +67,7 @@ const I18N = {
     f_llm: "Provider", f_model: "Model", f_key: "API key", f_base: "Endpoint",
     f_jsonmode: "Supports JSON mode", opt_custom_smtp: "Custom SMTP",
     opt_custom_llm: "Custom (OpenAI-compatible)", opt_demo: "Demo mode (preview only)",
+    opt_local: "Local template (no API key needed)",
     f_university: "University", f_intake: "Intake", f_program: "Programme",
     f_lang: "Email language", f_profile: "Applicant profile (the only facts an email may use)",
     f_profile_hint: "This is sample data — replace the whole block with your own. Emails may only use what is here.",
@@ -252,7 +254,7 @@ function salutationOf(name, title) {
 }
 
 function topicsOf(research, limit = 3) {
-  const text = String(research || "").replace(/\([^()]*\)/g, " | ");
+  const text = String(research || "").replace(/\([^()]*\)/g, " ").replace(/\s{2,}/g, " ");
   const out = [];
   for (const chunk of text.split(/[;,|、]/)) {
     const phrase = chunk.trim().replace(/^[ .;:-]+|[ .;:-]+$/g, "");
@@ -364,7 +366,192 @@ function demoEmail(cfg, prof) {
   return { subject, body };
 }
 
-/* ================================================================ network */
+/* ---------------------------------------------- no-API template writer */
+function parseFacts(text) {
+  const facts = {};
+  for (const raw of String(text || "").split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || /^[—-]/.test(line)) continue;
+    const m = line.match(/^([^:：]{1,16})[:：]\s*(.+)$/);
+    if (!m) continue;
+    const key = m[1].trim().toLowerCase();
+    if (!(key in facts)) facts[key] = m[2].trim();
+  }
+  return facts;
+}
+
+function fact(facts, keys) {
+  for (const k of keys) {
+    for (const [key, value] of Object.entries(facts)) {
+      if (key.includes(k)) return value;
+    }
+  }
+  return "";
+}
+
+function cleanDate(s) {
+  return String(s).replace(/[（(][^）)]*[）)]/g, "").replace(/[，,。.]$/, "").trim();
+}
+
+function sentence(s, limit) {
+  let t = String(s || "").replace(/[。.;；]+$/, "").trim();
+  if (limit && t.length > limit) t = t.slice(0, limit) + "…";
+  return t;
+}
+
+function titleOf(text, limit) {
+  const t = String(text || "");
+  const cn = t.match(/《([^》]{4,120})》/);
+  if (cn) return `《${cn[1]}》`;
+  const q = t.match(/["“]([^"”]{6,120})["”]/);
+  if (q) return `"${q[1]}"`;
+  return sentence(t, limit);
+}
+
+function deriveMajor(facts) {  const explicit = fact(facts, ["专业", "major"]);
+  if (explicit) return explicit;
+  const edu = fact(facts, ["学历", "degree", "education"]);
+  const m = edu.match(/([^\s，,]{2,20}?)专业/);
+  if (m) return m[1];
+  const en = edu.match(/in ([A-Za-z ,&]{4,40})/);
+  return en ? en[1].split(/,| and /)[0].trim() : "";
+}
+
+function hashOf(s) {
+  let h = 0;
+  for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h;
+}
+
+function renderSubject(tpl, cfg, prof) {
+  const top = topicsOf(prof.research, 1)[0] || "";
+  const table = {
+    "{方向}": top, "{topic}": top, "{area}": top,
+    "{姓名}": cfg.signatureName, "{name}": cfg.signatureName,
+    "{学校}": cfg.university, "{university}": cfg.university,
+    "{入学}": cfg.intake, "{intake}": cfg.intake,
+    "{教授}": prof.name, "{professor}": prof.name, "{surname}": surnameOf(prof.name),
+    "{项目}": cfg.program, "{program}": cfg.program,
+  };
+  let out = String(tpl);
+  for (const [k, v] of Object.entries(table)) out = out.split(k).join(v);
+  return out.replace(/\{[^{}]{0,20}\}/g, "").replace(/\s{2,}/g, " ").trim().slice(0, 120);
+}
+
+function signatureBlock(cfg, f, lang) {
+  const uni = fact(f, ["学校", "university", "院校"]) || cfg.university;
+  const major = fact(f, ["专业", "major"]);
+  const email = fact(f, ["邮箱", "email"]) || cfg.senderEmail;
+  const wechat = fact(f, ["微信", "wechat"]);
+  const phone = fact(f, ["电话", "phone", "tel"]);
+  const orcid = fact(f, ["orcid"]);
+  const lines = [cfg.signatureName];
+  lines.push(uni + (major ? (lang === "zh" ? " " : ", ") + major : ""));
+  lines.push((lang === "zh" ? "邮箱：" : "Email: ") + email);
+  if (wechat) lines.push((lang === "zh" ? "微信：" : "WeChat: ") + wechat);
+  if (phone) lines.push((lang === "zh" ? "电话：" : "Phone: ") + phone);
+  if (orcid) lines.push("ORCID: " + orcid);
+  return lines.join("\n");
+}
+
+function localEmail(cfg, prof) {
+  const f = parseFacts(cfg.profile);
+  const name = cfg.signatureName;
+  const uni = fact(f, ["学校", "university", "院校"]) || cfg.university;
+  const major = deriveMajor(f) || (cfg.lang === "zh" ? "计算机" : "Computer Science");
+  const grad = cleanDate(fact(f, ["毕业", "graduat"]));
+  const paper = fact(f, ["论文", "paper", "publication"]);
+  const project = fact(f, ["项目", "project"]);
+  const skills = fact(f, ["技能", "skill"]);
+  const topics = topicsOf(prof.research, 2);
+  const area = topics.length ? topics.join(cfg.lang === "zh" ? "、" : ", ") : (cfg.lang === "zh" ? "这个方向" : "this area");
+  const v = hashOf(prof.email) % 3;
+  const sig = signatureBlock(cfg, f, cfg.lang);
+
+  let subject;
+  if ((cfg.subjectTpl || "").trim()) {
+    subject = renderSubject(cfg.subjectTpl, cfg, prof);
+  } else if (cfg.lang === "zh") {
+    const full = `${cfg.intake}硕士申请咨询：${topics[0] || "研究方向"}`;
+    subject = full.length <= 30 ? full : `${cfg.intake}硕士申请咨询`;
+  } else {
+    const full = `${cfg.intake} master's application - ${topics[0] || "research"}`;
+    subject = full.split(/\s+/).length <= 10 ? full : `${cfg.intake} master's application`;
+  }
+
+  if (cfg.lang === "zh") {
+    const openings = [
+      `我是${uni}${major}专业本科生${name}${grad ? `，预计${grad}毕业` : ""}，正在准备${cfg.intake}入学的硕士申请。`,
+      `我叫${name}，${uni}${major}专业本科生${grad ? `，${grad}毕业` : ""}，目前正在准备${cfg.intake}的硕士申请。`,
+      `我是${uni}${major}专业的本科生${name}${grad ? `，将于${grad}毕业` : ""}，打算申请${cfg.intake}入学的硕士。`,
+    ];
+    const paperTitle = paper ? titleOf(paper, 70) : "";
+    const paperRole = (paper.match(/本人(?:负责|参与|完成)([^。；;]{4,60})/) || [])[1];
+    const projectTitle = project ? titleOf(project, 70) : "";
+    const projectRole = (project.match(/本人(?:负责|参与|完成)([^。；;]{4,60})/) || [])[1];
+    const paperLine = paperTitle ? `我参与过${paperTitle}的工作${paperRole ? `，负责${paperRole}` : ""}。` : "";
+    const projectLine = projectTitle ? `我也参与过${projectTitle}${projectRole ? `，负责${projectRole}` : ""}。` : "";
+    const skillLine = skills ? `技能方面，我熟悉${sentence(skills, 50)}。` : "";
+    const evidence = [paperLine, projectLine, skillLine].filter(Boolean).join("");
+
+    let body = `${prof.sal.zh}
+
+您好！冒昧来信打扰，深感抱歉。
+
+${openings[v]}
+
+我读过您的简介，对您在${area}方面的研究很感兴趣。这也是我希望在硕士阶段深入的方向。
+
+${evidence}
+
+我目前的${"这个方向"}基础还在起步阶段，但我愿意在入学前补上：先把您提到的几本基础文献和综述读完，再跟着课题组的节奏做具体工作。
+
+请问您在${cfg.intake}是否招收硕士研究生？如您方便，我希望能有十分钟左右的时间向您请教需要提前准备的知识和文献；若名额已满，也恳请您给些建议。
+
+随信附上我的简历。感谢您的时间。
+
+此致
+敬礼！
+
+${sig}`;
+
+    if ((body.match(/[\u4e00-\u9fff]/g) || []).length < 320) {
+      body = body.replace("随信附上我的简历", "我知道自己的积累还不算多，但愿意从基础做起，先把基本功打扎实，再参与具体的工作。\n\n随信附上我的简历");
+    }
+    return { subject, body };
+  }
+
+  const openings = [
+    `I am a ${major} undergraduate at ${uni}${grad ? `, graduating in ${grad},` : ""} and I am writing to ask whether you will be taking master's students in ${cfg.intake}.`,
+    `I am a final-year ${major} student at ${uni}${grad ? ` (graduating ${grad})` : ""}. I am writing to ask about master's supervision in your group for ${cfg.intake}.`,
+    `I am writing to ask whether you will be admitting master's students in ${cfg.intake}. I am a ${major} undergraduate at ${uni}${grad ? `, finishing in ${grad}` : ""}.`,
+  ];
+  const paperLine = paper ? ` I have worked on ${titleOf(paper, 110)}.` : "";
+  const projectLine = project ? ` I also worked on ${titleOf(project, 90)}.` : "";
+  const skillLine = skills ? ` The tools I use are ${sentence(skills, 80)}.` : "";
+
+  let body = `${prof.sal.en}
+
+${openings[v]}
+
+I have read your profile and am interested in your work on ${area}. That is the direction I would like to learn during a master's.
+
+${(paperLine + projectLine + skillLine).trim()}
+
+My grounding in ${area} is still at an early stage, and I would rather say so plainly. I am willing to do the reading before enrolment and to start from the foundations of the group's work.
+
+Would you be admitting master's students in ${cfg.intake}? If you have ten minutes, I would value a short call to ask what I should read and prepare. If your places are already full, any advice would still help.
+
+My CV is attached. Thank you for your time.
+
+Best regards,
+${sig}`;
+
+  if (body.trim().split(/\s+/).length < 150) {
+    body = body.replace("My CV is attached.", "I know my background is still limited, but I am ready to start from the basics, read carefully, and then take on real work in the group.\n\nMy CV is attached.");
+  }
+  return { subject, body };
+}
 async function callLLM(cfg, system, user) {
   const payload = {
     model: cfg.model,
@@ -467,13 +654,15 @@ async function testLogin() {
 function readConfig() {
   const provider = val("llm_provider") || "deepseek";
   const demo = provider === "demo";
+  const key = $("#api_key").value;
+  const local = provider === "local" || (!demo && provider !== "custom" && !key.trim());
   let base = "", model = "", jsonMode = false, cost = [0, 0];
   if (provider === "custom") {
     base = val("api_base");
     model = val("api_model");
     jsonMode = $("#json_mode").checked;
     if (!base || !model) throw new Error(state.lang === "zh" ? "自定义服务商需要填写接口地址和模型名" : "A custom provider needs an endpoint and a model");
-  } else if (!demo) {
+  } else if (!demo && !local) {
     const p = LLM_BASES[provider];
     base = p.base; model = val("api_model") || p.model; jsonMode = p.json; cost = p.cost;
   }
@@ -496,7 +685,7 @@ function readConfig() {
 
   return {
     lang: val("language") || "zh",
-    demo, base, model, jsonMode, key: $("#api_key").value, cost,
+    demo, local, base, model, jsonMode, key, cost,
     smtpHost, smtpPort, smtpSsl,
     senderEmail, authKey: $("#auth_key").value,
     senderName: val("sender_name"),
@@ -523,6 +712,8 @@ async function preview() {
     let subject, body, tokens = 0;
     if (cfg.demo) {
       ({ subject, body } = demoEmail(cfg, prof));
+    } else if (cfg.local) {
+      ({ subject, body } = localEmail(cfg, prof));
     } else {
       if (!cfg.key) throw new Error(state.lang === "zh" ? "请填写 API Key" : "API key is missing");
       const { system, user } = buildPrompt(cfg, prof);
@@ -537,6 +728,7 @@ async function preview() {
         if (!validate(cfg, prof, subject, body, Boolean(cfg.subjectTpl.trim())).length) break;
       }
       if (!body) throw new Error(state.lang === "zh" ? "三次生成都没通过格式校验" : "three attempts failed validation");
+      if (cfg.subjectTpl.trim()) subject = renderSubject(cfg.subjectTpl, cfg, prof);
     }
     $("#m_to").textContent = `${t("modal_to")}${prof.name} <${prof.email}>`;
     $("#m_subject").textContent = subject;
@@ -586,7 +778,7 @@ async function startRun() {
 
   let cfg;
   try { cfg = readConfig(); } catch (e) { return showError(e.message); }
-  if (!cfg.demo && !cfg.key) return showError(state.lang === "zh" ? "请填写 API Key" : "API key is missing");
+  if (!cfg.demo && !cfg.local && !cfg.key) return showError(state.lang === "zh" ? "请填写 API Key，或选择「本地模板」" : "Add an API key, or choose the local template writer");
   if (!cfg.demo && !cfg.authKey && val("smtp_provider") !== "custom") {
     return showError(state.lang === "zh" ? "请填写邮箱授权码" : "App password is missing");
   }
@@ -619,6 +811,8 @@ async function startRun() {
       try {
         if (cfg.demo) {
           ({ subject, body } = demoEmail(cfg, prof));
+        } else if (cfg.local) {
+          ({ subject, body } = localEmail(cfg, prof));
         } else {
           const { system, user } = buildPrompt(cfg, prof);
           let problems = ["not generated"];
@@ -637,6 +831,7 @@ async function startRun() {
             if (!problems.length) break;
           }
           if (problems.length) throw new Error(problems.join(", "));
+          if (cfg.subjectTpl.trim()) subject = renderSubject(cfg.subjectTpl, cfg, prof);
         }
       } catch (e) {
         state.run.failed++;
