@@ -1,5 +1,22 @@
 [build]
   publish = "site"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# one function per send; the browser orchestrates the queue
+[[redirects]]
+  from = "/api/send"
+  to = "/.netlify/functions/send"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/llm"
+  to = "/.netlify/functions/llm"
+  status = 200
+  force = true
 
 [[headers]]
   for = "/*"

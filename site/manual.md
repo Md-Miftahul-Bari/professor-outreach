@@ -1,10 +1,15 @@
 # 使用手册 · User Manual
 
-一个在本机运行的小网站：读取教授名单 CSV，为每位教授单独写一封中文或英文申请邮件，再通过你自己的邮箱
-逐封发出。
+一个工具，两种用法：在线版打开就能用，本地版在自己电脑上跑。都是读取教授名单 CSV，为每位教授单独写一封
+中文或英文申请邮件，再通过你自己的邮箱逐封发出。
 
-A local web app that reads a CSV of professors, writes a separate email for each one, and sends them from your
-own mailbox.
+One tool, two editions: hosted (open the link) and local (run it yourself). Both read a CSV of professors,
+write a separate email for each one, and send them from your own mailbox.
+
+**在线版 / Hosted**：打开部署链接，填表即可。AI 请求由浏览器直接发出，只有发信经过一次服务器转发；不保存
+任何凭据。限制：附件约 4 MB，发送时页面要保持打开。
+
+**本地版 / Local**：`python app.py`，同样界面，附件可到 25 MB，不受浏览器限制。
 
 ---
 
@@ -37,6 +42,10 @@ own mailbox.
 接口。
 
 ## 3. 启动
+
+**在线版**：直接打开部署链接，不需要安装任何东西。
+
+**本地版**：
 
 ```
 python app.py
@@ -175,6 +184,10 @@ It does not mail-merge. Paragraphs 3–5 are rewritten around each professor's f
 endpoint.
 
 ## 3. Start it
+
+**Hosted**: open the deployed link. Nothing to install.
+
+**Local**:
 
 ```
 python app.py

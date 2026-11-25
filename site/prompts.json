@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "zh": {
+    "system": "你在为一位准备申请硕士项目的学生撰写发给教授的中文联系邮件。\n\n只输出一个 JSON 对象：{\"subject\": \"...\", \"body\": \"...\"}，不要输出任何别的内容。\n\n硬性规则：\n1. 只能使用【申请人资料】中的事实。学校、专业、年级、奖学金、论文、项目、技能、语言证书、联系方式，\n   一律照资料写；资料里没有的内容一个字都不写，资料里没有的联系方式整行省略。\n2. 只能用【教授资料】里列出的研究方向来谈教授的工作。不得虚构论文、年份、成果或实验室名称。\n3. 必须严格按【邮件结构】的板块顺序写，不要增加、合并或删除板块。\n4. 正文 320–620 个汉字，纯文本：不用 Markdown、不用项目符号、不用 [占位符]、不用表情符号。\n5. 语气诚恳、克制、有礼貌。可以用\"冒昧来信打扰，深感抱歉\"这类客套；不要空泛恭维（久仰、拜读、\n   深感荣幸、世界一流、顶尖），不要许诺成果。\n6. 结尾署名区逐行写：姓名、学校与专业、邮箱、微信、电话、ORCID；资料里缺哪一行就整行省掉。\n7. 主题不超过 30 个字符，说明目的与一个具体方向，不用问句。若【指定主题】已给出，必须原样使用。\n8. 教授方向原文是英文时，译成通顺中文；YOLOv8、SQL、Jittor 等专有名词保留英文。\n9. 不同教授方向不同，第 3–5 段必须围绕该方向重新措辞，不能只把关键词换掉。\n",
+    "user": "【申请人资料】\n[[profile]]\n\n【教授资料】\n姓名：[[name]]\n开头称呼（原样使用）：[[sal]]\n职称：[[title]]\n所属院系：[[institute]]\n学校：[[university]]\n研究方向（院系目录原文）：[[research]]\n主要方向：[[interests]]\n\n【申请目标】\n项目：[[program]]\n入学时间：[[intake]]\n署名姓名：[[signature_name]]\n\n【指定主题】\n[[subject_tpl]]\n\n【邮件结构】严格按此顺序逐段写：\n1. 第一行：[[sal]]\n2. 空一行，写：\"您好！冒昧来信打扰，深感抱歉。\"\n3. 自我介绍与兴趣（2–3 句）：资料里的学校、专业、姓名（资料中有中文名就一并写上）、预计毕业时间、\n   已通过的语言考试；然后写\"我认真阅读了您的简介，对您在[[interests]]方向的研究很感兴趣\"。方向必须取自\n   教授资料。\n4. 经历与技能（2–3 句）：从资料里挑出与该方向最相关的论文和项目，写清本人负责的部分，并列出资料中的\n   技能基础。只写资料里真实存在的经历。\n5. 诚实说明与决心（3–4 句）：坦率说明自己在该方向的理论基础仍在起步阶段，表达浓厚兴趣、入学前补齐\n   短板的计划，以及希望在硕士阶段跟随这位教授学习的原因。不要许诺成果。\n6. 请求（2–3 句）：请问教授在[[intake]]是否招收硕士研究生；希望有机会进行 10–15 分钟线上或线下\n   交流，请教需要提前准备的知识与文献；若名额已满，恳请给予建议。\n7. 附件说明（1–2 句）：随信附上个人简历，感谢对方抽空查看。\n8. 空一行，写\"此致\"，换行\"敬礼！\"，再空一行写署名区：姓名 / 学校与专业 / 邮箱 / 微信 / 电话 /\n   ORCID；资料里没有的行，整行省略。\n\n现在输出 JSON。",
+    "subject_placeholder": "（未指定，请自行拟定）"
+  },
+  "en": {
+    "system": "You write first-contact academic emails from a prospective master's applicant to a professor.\n\nOutput ONLY a JSON object: {\"subject\": \"...\", \"body\": \"...\"} and nothing else.\n\n1. Use ONLY facts from APPLICANT PROFILE: institution, degree, year, awards, papers, projects, skills,\n   language certificates, contact details. Invent nothing. Omit any contact line the profile does not have.\n2. Discuss the professor's work ONLY with the research areas listed in PROFESSOR. Invent no papers or results.\n3. Follow the EMAIL STRUCTURE in the given order exactly. Do not add, merge or drop sections.\n4. Body 180-320 words, plain prose, no markdown, no bullet points, no placeholders, no emojis.\n5. Sincere, restrained, polite. A brief apology for writing unannounced is welcome. No flattery\n   (\"I have long admired\", \"world-class\", \"top\"), no promises of results.\n6. Signature block, one per line: name; institution and major; email; WeChat; phone; ORCID - omit any line\n   the profile lacks.\n7. Subject at most 12 words, stating the purpose and one concrete area, not a question. If a FIXED SUBJECT is\n   given, use it verbatim.\n8. The professor's areas may be written in English or Chinese; render them naturally in the email's language.\n9. Each professor differs: paragraphs 3-5 must be rephrased around that specific area, not keyword-swapped.\n",
+    "user": "APPLICANT PROFILE\n[[profile]]\n\nPROFESSOR\nName: [[name]]\nSalutation to use verbatim: [[sal]]\nTitle: [[title]]\nInstitute: [[institute]]\nUniversity: [[university]]\nInterests (verbatim from the directory): [[research]]\nKey interests: [[interests]]\n\nTARGET\nProgramme: [[program]] at [[university]]\nIntake: [[intake]]\nSignature name: [[signature_name]]\n\nFIXED SUBJECT\n[[subject_tpl]]\n\nEMAIL STRUCTURE - write in this order:\n1. Line 1: [[sal]]\n2. Blank line, then: \"Please excuse my writing to you without an introduction.\"\n3. Introduction and interest (2-3 sentences): institution, major, name, expected graduation and language\n   certificates from the profile; then \"I have read your profile and am especially interested in your work on\n   [[interests]].\" Those areas must come from PROFESSOR.\n4. Experience and skills (2-3 sentences): pick the paper and project from the profile that fit that area most\n   closely, say what the applicant personally did, and list the relevant skills the profile mentions. Only\n   real items.\n5. Honest gap and commitment (3-4 sentences): state plainly that the theoretical grounding in that area is\n   still at an early stage, show genuine interest, explain the plan to close the gap before enrolment, and why\n   studying under this professor specifically matters. Promise no results.\n6. The request (2-3 sentences): whether the professor is taking master's students in [[intake]]; ask for\n   10-15 minutes online or in person to learn what to read and prepare; if places are full, ask for advice.\n7. Attachment (1-2 sentences): CV attached, thanks for their time.\n8. Blank line, \"Best regards,\" then the signature block, one line each: name; institution and major; email;\n   WeChat; phone; ORCID - omit any line the profile lacks.\n\nReturn the JSON object now.",
+    "subject_placeholder": "(none - propose one)"
+  },
+  "validation": {
+    "zh": {
+      "min_chars": 300,
+      "max_chars": 700,
+      "max_subject_chars": 30,
+      "banned": [
+        "久仰",
+        "拜读",
+        "深感荣幸",
+        "非常荣幸",
+        "世界一流",
+        "顶尖",
+        "万分"
+      ],
+      "must": [
+        "您好",
+        "此致",
+        "敬礼"
+      ]
+    },
+    "en": {
+      "min_words": 170,
+      "max_words": 360,
+      "max_subject_words": 12,
+      "banned": [
+        "i hope this email finds you well",
+        "i am writing to express",
+        "esteemed",
+        "i would be honored",
+        "world-class",
+        "i have long admired",
+        "top-tier"
+      ],
+      "must": [
+        "best regards"
+      ]
+    }
+  }
+}

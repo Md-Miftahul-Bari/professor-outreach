@@ -1,0 +1,10 @@
+{
+  "name": "professor-outreach",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Write a separate email for every professor in a CSV and send them from your own mailbox",
+  "license": "MIT",
+  "dependencies": {
+    "nodemailer": "^6.9.14"
+  }
+}

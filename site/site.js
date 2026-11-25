@@ -7,7 +7,7 @@ const I18N = {
     kicker: "本机运行 · 不上传任何凭据",
     h1: "给每位教授，写一封只属于他的信",
     lead: "上传一份教授名单和一份自己的背景资料，它按每位教授的研究方向单独写信——不是群发模板——再通过你自己的邮箱逐封发出，附上简历，并实时告诉你发到第几封。",
-    btn_start: "快速开始", btn_manual: "阅读使用手册",
+    btn_start: "快速开始", btn_manual: "阅读使用手册", btn_open: "打开应用",
     b1: "零依赖", b2: "中英双语界面", b3: "MIT 许可",
     how_h2: "它到底做了什么", how_lead: "三步，全部在你自己的电脑上完成。",
     step1_t: "读名单", step1_d: "解析 CSV：姓名、邮箱、职称、院系、研究方向。没有邮箱的行跳过，重复的邮箱只发一次。",
@@ -29,7 +29,7 @@ const I18N = {
     q3: "能放在网上给所有人用吗？", a3: "不建议。别人的邮箱授权码会经过你的服务器。让每个人在自己电脑上运行更安全。",
     q4: "支持哪些模型和邮箱？", a4: "DeepSeek、OpenAI、Kimi、SiliconFlow 或任意 OpenAI 兼容接口；QQ、Gmail、Outlook、163、126 或自定义 SMTP。",
     foot_left: "MIT License · 本地运行，凭据不上传", foot_manual: "使用手册",
-    nav_home: "返回首页", loading: "载入中…",
+    nav_home: "返回首页", loading: "载入中…", nav_about: "关于",
   },
   en: {
     brand: "Professor Outreach",
@@ -37,7 +37,7 @@ const I18N = {
     kicker: "Runs on your machine · no credentials uploaded",
     h1: "A separate letter for every professor",
     lead: "Load a list of professors and one profile of yourself. It writes an individual email around each professor's research, sends them one by one from your own mailbox with your CV attached, and shows you the queue in real time.",
-    btn_start: "Quick start", btn_manual: "Read the manual",
+    btn_start: "Quick start", btn_manual: "Read the manual", btn_open: "Open the app",
     b1: "No dependencies", b2: "Chinese & English UI", b3: "MIT licensed",
     how_h2: "What it actually does", how_lead: "Three steps, all on your own computer.",
     step1_t: "Reads the list", step1_d: "Parses the CSV: name, email, title, institute, research areas. Rows without an email are skipped and no address is ever emailed twice.",
@@ -59,7 +59,7 @@ const I18N = {
     q3: "Can I host it publicly for everyone?", a3: "Not advisable — other people's mailbox passwords would pass through your server. Local use is safer.",
     q4: "Which models and mailboxes work?", a4: "DeepSeek, OpenAI, Kimi, SiliconFlow or any OpenAI-compatible endpoint; QQ, Gmail, Outlook, 163, 126 or custom SMTP.",
     foot_left: "MIT License · runs locally, credentials never uploaded", foot_manual: "Manual",
-    nav_home: "Back to home", loading: "Loading…",
+    nav_home: "Back to home", loading: "Loading…", nav_about: "About",
   },
 };
 
